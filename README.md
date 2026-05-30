@@ -12,4 +12,4 @@
 6. Storage link: `php artisan storage:link`
 7. Jalankan migration: `php artisan migrate --seed`
 8. Jalankan project: `php artisan serve`
-9. Akses ke dashboard: `127.0.0.1:8000/login`, login menggunakan email: `superadmin@epoint.sch.id` password: `password123`
+9. Akses ke dashboard: `127.0.0.1:8000/login`, login menggunakan username: `superadmin` password: `password123`
