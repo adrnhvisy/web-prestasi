@@ -60,8 +60,12 @@ Route::post('/register', [RegisterController::class, 'register']);
 Route::middleware(['auth', 'check.user.active'])->group(function () {
     
     // Dashboard (auto redirect berdasarkan hak akses)
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+    Route::middleware(['role', 'superadmin'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    });
+    Route::middleware(['permission:user.view'])->group(function () {
+        Route::get('/users', [UserController::class,'index']);
+    });
     // Dashboard khusus berdasarkan role (untuk redirect manual)
     Route::get('/dashboard/admin', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
     Route::get('/dashboard/bk', [DashboardController::class, 'bkDashboard'])->name('bk.dashboard');
@@ -76,7 +80,7 @@ Route::middleware(['auth', 'check.user.active'])->group(function () {
         Route::get('/', [ProfileController::class, 'index'])->name('index');
         Route::put('/', [ProfileController::class, 'update'])->name('update');
         Route::put('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
-        Route::post('/update-foto', [ProfileController::class, 'updateFoto'])->name('update-foto');
+        Route::post('pdate-foto', [ProfileController::class, 'updateFoto'])->name('update-foto');
     });
 
     // =============================================

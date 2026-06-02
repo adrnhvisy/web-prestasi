@@ -14,15 +14,15 @@ class DatabaseSeeder extends Seeder
         // Panggil semua seeder dalam urutan yang benar
         $this->call([
 
+            RoleSeeder::class,
+            PermissionSeeder::class,
+            RolePermissionSeeder::class,
             TahunAjaranSeeder::class,
             JurusanSeeder::class,
             // KategoriSeeder::class,
             // SiswaSeeder::class,
             // KelasSeeder::class,
             // KategoriSeeder::class,
-            RoleSeeder::class,
-            RolePermissionSeeder::class,
-            PermissionSeeder::class,
             UserSeeder::class,
 
         ]);

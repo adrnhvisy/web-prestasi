@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "81b46f1e698db0747a4088c05deb81d4",
+    "content-hash": "b170490ba559f1b1898901847c4270e2",
     "packages": [
         {
             "name": "brick/math",
@@ -3358,16 +3358,16 @@
         },
         {
             "name": "spatie/laravel-permission",
-            "version": "7.4.0",
+            "version": "8.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-permission.git",
-                "reference": "6f60746145bbdb1692021d44860d7850c1d2041a"
+                "reference": "70a6ab04108616b438e0839598f473b513281644"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/6f60746145bbdb1692021d44860d7850c1d2041a",
-                "reference": "6f60746145bbdb1692021d44860d7850c1d2041a",
+                "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/70a6ab04108616b438e0839598f473b513281644",
+                "reference": "70a6ab04108616b438e0839598f473b513281644",
                 "shasum": ""
             },
             "require": {
@@ -3395,8 +3395,8 @@
                     ]
                 },
                 "branch-alias": {
-                    "dev-main": "7.x-dev",
-                    "dev-master": "7.x-dev"
+                    "dev-main": "8.x-dev",
+                    "dev-master": "8.x-dev"
                 }
             },
             "autoload": {
@@ -3433,7 +3433,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-permission/issues",
-                "source": "https://github.com/spatie/laravel-permission/tree/7.4.0"
+                "source": "https://github.com/spatie/laravel-permission/tree/8.0.0"
             },
             "funding": [
                 {
@@ -3441,7 +3441,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-04-28T14:02:19+00:00"
+            "time": "2026-05-30T19:30:22+00:00"
         },
         {
             "name": "symfony/clock",

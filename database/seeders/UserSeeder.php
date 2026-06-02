@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\MasterData\Guru;
 use App\Models\MasterData\Siswa;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class UserSeeder extends Seeder
 {
@@ -27,10 +28,11 @@ class UserSeeder extends Seeder
             'email' => 'superadmin@epoint.sch.id',
             'password' => Hash::make('password123'),
             'foto' => 'default.jpg',
-            'hak_akses' => 'superadmin',
             'is_active' => true,
             'email_verified_at' => now(),
         ]);
+
+        $superAdmin->assignRole('superadmin');
 
         // 2. Admin
         $admin = User::create([
@@ -39,10 +41,11 @@ class UserSeeder extends Seeder
             'email' => 'admin@epoint.sch.id',
             'password' => Hash::make('password123'),
             'foto' => 'default.jpg',
-            'hak_akses' => 'admin',
             'is_active' => true,
             'email_verified_at' => now(),
         ]);
+
+        $admin->assignRole('admin');
 
         // 3. Guru BK
         $guruBK = User::create([
@@ -51,10 +54,11 @@ class UserSeeder extends Seeder
             'email' => 'bk@epoint.sch.id',
             'password' => Hash::make('password123'),
             'foto' => 'default.jpg',
-            'hak_akses' => 'bk',
             'is_active' => true,
             'email_verified_at' => now(),
         ]);
+
+        $guruBK->assignRole('bk');
 
         // Data Guru untuk user BK
         // Guru::create([
