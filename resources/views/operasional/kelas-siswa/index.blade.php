@@ -108,9 +108,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($kelas as $index => $item)
+                            @forelse($kelasSiswa as $index => $item)
                             <tr>
-                                <td>{{ $kelas->firstItem() + $loop->index }}</td>
+                                <td>{{ $kelasSiswa->firstItem() + $loop->index }}</td>
                                 <td>{{ $item->waliKelas->nip ?? '-' }}</td>
                                 <td><strong>{{ $item->waliKelas->nama ?? '-' }}</strong></td>
                                 <td>{{ $item->nama_lengkap ?? '-' }}</td>
@@ -151,7 +151,7 @@
                 </div>
                 
                 <div class="d-flex justify-content-end mt-3">
-                    {{ $kelas->appends(request()->query())->links() }}
+                    {{ $kelasSiswa->appends(request()->query())->links() }}
                 </div>
             </div>
         </div>
