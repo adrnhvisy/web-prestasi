@@ -29,17 +29,15 @@ class DashboardController extends Controller implements HasMiddleware
 
     public function index()
     {
-        $role = Auth::user()->hak_akses;
+        $user = Auth::user();
 
-        // Logic Redirect berdasarkan Role
-        if (in_array($role, ['superadmin', 'admin'])) {
-            return $this->adminDashboard();
-        } elseif ($role === 'bk') {
-            return $this->bkDashboard();
-        }
-
-        // Default jika role lain (misal siswa)
-        return view('dashboard.user', ['user' => Auth::user()]);
+        return match (true) {
+            $user->hasRole('superadmin') => $this->adminDashboard(),
+            $user->hasRole('admin') => $this->adminDashboard(),
+            $user->hasRole('bk') => $this->bkDashboard(),
+            $user->hasRole('siswa') => $this->siswaDashboard(),
+            default => abort(403),
+        };
     }
 
     /**
@@ -52,10 +50,10 @@ class DashboardController extends Controller implements HasMiddleware
             'pageTitle' => 'Dashboard Admin',
             'statistik' => [
                 'total_siswa' => Siswa::count(),
-                'total_guru'  => Guru::count(),
+                'total_guru' => Guru::count(),
                 'total_kelas' => Kelas::count(),
                 'total_pelanggaran' => Pelanggaran::count(),
-                'total_prestasi'    => Prestasi::count(),
+                'total_prestasi' => Prestasi::count(),
             ],
             'menuAktif' => 'dashboard',
         ];
@@ -74,14 +72,33 @@ class DashboardController extends Controller implements HasMiddleware
             'statistik' => [
                 // Jika BK hanya melihat data tertentu, tambahkan where()
                 'total_siswa' => Siswa::count(),
-                'total_guru'  => Guru::count(),
+                'total_guru' => Guru::count(),
                 'total_kelas' => Kelas::count(),
                 'total_pelanggaran' => Pelanggaran::count(),
-                'total_prestasi'    => Prestasi::count(),
+                'total_prestasi' => Prestasi::count(),
             ],
             'menuAktif' => 'dashboard',
         ];
 
         return view('dashboard.bk', $data);
     }
+
+    public function siswaDashboard()
+    {
+        $data = [
+            'user' => Auth::user(),
+            'pageTitle' => 'Dashboard Siswa',
+            'statistik' => [
+                'total_siswa' => Siswa::count(),
+                'total_guru' => Guru::count(),
+                'total_kelas' => Kelas::count(),
+                'total_pelanggaran' => Pelanggaran::count(),
+                'total_prestasi' => Prestasi::count(),
+            ],
+            'menuAktif' => 'dashboard',
+        ];
+
+        return view('dashboard.siswa', $data);
+    }
+
 }

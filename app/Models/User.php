@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\MasterData\Guru;
+use App\Models\MasterData\Siswa;
+use App\Models\Operasional\LogAktivitas;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -21,7 +24,6 @@ class User extends Authenticatable
         'foto',
         'no_telp',
         'alamat',
-        'hak_akses',
         'is_active',
         'email_verified_at',
     ];
@@ -40,7 +42,7 @@ class User extends Authenticatable
         ];
     }
 
-     /**
+    /**
      * Accessor untuk URL foto
      */
     public function getFotoUrlAttribute()
@@ -59,107 +61,107 @@ class User extends Authenticatable
     // Relasi
     public function guru()
     {
-        return $this->hasOne(\App\Models\MasterData\Guru::class, 'user_id', 'id');
+        return $this->hasOne(Guru::class, 'user_id', 'id');
     }
 
     public function siswa()
     {
-        return $this->hasOne(\App\Models\MasterData\Siswa::class, 'user_id', 'id');
+        return $this->hasOne(Siswa::class, 'user_id', 'id');
     }
 
     public function logAktivitas()
     {
-        return $this->hasMany(\App\Models\Operasional\LogAktivitas::class, 'user_id', 'id');
+        return $this->hasMany(LogAktivitas::class, 'user_id', 'id');
     }
 
-    // Helper methods untuk pengecekan hak akses
+    // Helper methods menggunakan Spatie Role
     public function isSuperAdmin()
     {
-        return $this->hak_akses === 'superadmin';
+        return $this->hasRole('superadmin');
     }
 
     public function isAdmin()
     {
-        return $this->hak_akses === 'admin';
+        return $this->hasRole('admin');
     }
 
     public function isGuru()
     {
-        return $this->hak_akses === 'guru';
+        return $this->hasRole('guru');
     }
 
     public function isBK()
     {
-        return $this->hak_akses === 'bk';
+        return $this->hasRole('bk');
     }
 
     public function isSiswa()
     {
-        return $this->hak_akses === 'siswa';
+        return $this->hasRole('siswa');
     }
 
     public function isOrtu()
     {
-        return $this->hak_akses === 'ortu';
+        return $this->hasRole('ortu');
     }
 
     public function canAccessAdmin()
     {
-        return in_array($this->hak_akses, ['superadmin', 'admin', 'bk']);
+        return $this->hasAnyRole(['superadmin', 'admin', 'bk']);
     }
 
     public function canInputData()
     {
-        return in_array($this->hak_akses, ['superadmin', 'admin', 'guru', 'bk']);
+        return $this->hasAnyRole(['superadmin', 'admin', 'guru', 'bk']);
     }
 
     public function canManageMaster()
     {
-        return in_array($this->hak_akses, ['superadmin', 'admin']);
+        return $this->hasAnyRole(['superadmin', 'admin']);
     }
 
     /**
- * Cek apakah user bisa mengelola users lain
- */
-public function canManageUsers()
-{
-    return in_array($this->hak_akses, ['superadmin', 'admin']);
-}
+     * Cek apakah user bisa mengelola users lain
+     */
+    public function canManageUsers()
+    {
+        return $this->hasAnyRole(['superadmin', 'admin']);
+    }
 
-/**
- * Cek apakah user bisa menghapus user lain
- */
-public function canDeleteUser(User $targetUser)
-{
-    // Superadmin bisa hapus semua kecuali superadmin lain dan diri sendiri
-    if ($this->hak_akses == 'superadmin') {
-        return $targetUser->id != $this->id && $targetUser->hak_akses != 'superadmin';
+    /**
+     * Cek apakah user bisa menghapus user lain
+     */
+    public function canDeleteUser(User $targetUser)
+    {
+        // Superadmin bisa hapus semua kecuali superadmin lain dan diri sendiri
+        if ($this->hasRole('superadmin')) {
+            return $targetUser->id != $this->id && !$targetUser->hasRole('superadmin');
+        }
+        
+        // Admin hanya bisa hapus user dengan hak akses di bawahnya
+        if ($this->hasRole('admin')) {
+            return !$targetUser->hasAnyRole(['superadmin', 'admin']) 
+                && $targetUser->id != $this->id;
+        }
+        
+        return false;
     }
-    
-    // Admin hanya bisa hapus user dengan hak akses di bawahnya
-    if ($this->hak_akses == 'admin') {
-        return !in_array($targetUser->hak_akses, ['superadmin', 'admin']) 
-            && $targetUser->id != $this->id;
-    }
-    
-    return false;
-}
 
-/**
- * Cek apakah user bisa mengedit user lain
- */
-public function canEditUser(User $targetUser)
-{
-    // Superadmin bisa edit semua
-    if ($this->hak_akses == 'superadmin') {
-        return true;
+    /**
+     * Cek apakah user bisa mengedit user lain
+     */
+    public function canEditUser(User $targetUser)
+    {
+        // Superadmin bisa edit semua
+        if ($this->hasRole('superadmin')) {
+            return true;
+        }
+        
+        // Admin bisa edit semua kecuali superadmin
+        if ($this->hasRole('admin')) {
+            return !$targetUser->hasRole('superadmin');
+        }
+        
+        return false;
     }
-    
-    // Admin bisa edit semua kecuali superadmin
-    if ($this->hak_akses == 'admin') {
-        return $targetUser->hak_akses != 'superadmin';
-    }
-    
-    return false;
-}
 }

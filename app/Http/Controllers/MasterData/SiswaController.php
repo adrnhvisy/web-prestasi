@@ -81,10 +81,9 @@ class SiswaController extends Controller
             'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make('siswa123'),
-            'hak_akses' => 'siswa',
             'is_active' => true,
         ]);
-
+        $user->assignRole('siswa');
 
         // Buat data siswa
         $siswa = Siswa::create([
@@ -124,11 +123,15 @@ class SiswaController extends Controller
     {
         $tahunAjaranAktif = TahunAjaran::getActive();
 
-        $siswa->load(['user', 'inputPelanggaran' => function ($q) {
-            $q->with('pelanggaran')->latest()->limit(10);
-        }, 'inputPrestasi' => function ($q) {
-            $q->with('prestasi')->latest()->limit(10);
-        }]);
+        $siswa->load([
+            'user',
+            'inputPelanggaran' => function ($q) {
+                $q->with('pelanggaran')->latest()->limit(10);
+            },
+            'inputPrestasi' => function ($q) {
+                $q->with('prestasi')->latest()->limit(10);
+            }
+        ]);
 
         // PASTIKAN VARIABEL INI ADA, MESKIPUN NULL
         $kelasAktif = $siswa->getKelasAktif(); // Bisa null

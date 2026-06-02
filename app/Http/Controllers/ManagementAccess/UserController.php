@@ -15,27 +15,38 @@ use Illuminate\Routing\Controllers\Middleware;
 class UserController extends Controller implements HasMiddleware
 {
     /**
-     * Pengganti __construct untuk Laravel terbaru.
+     * Pengganti __construct untuk Laravel terbaru menggunakan Spatie Role.
      */
     public static function middleware(): array
     {
         return [
             new Middleware('auth'),
-            new Middleware(function ($request, $next) {
-                // Superadmin dan admin bisa akses semua method
-                if (in_array(Auth::user()->hak_akses, ['superadmin', 'admin'])) {
-                    return $next($request);
-                }
 
-                // User lain hanya bisa melihat profil sendiri
-                // Kita ambil parameter 'user' dari route jika ada
+            new Middleware('role:superadmin|admin', only: [
+                'index',
+                'create',
+                'store',
+                'destroy',
+                'toggleActive'
+            ]),
+
+            new Middleware(function ($request, $next) {
                 $targetUser = $request->route('user');
-                if ($targetUser instanceof User && $targetUser->id != Auth::id()) {
-                    abort(403, 'Anda tidak memiliki akses ke data user lain.');
+
+                if (
+                    $targetUser instanceof User
+                    && !auth()->user()->hasAnyRole(['superadmin', 'admin'])
+                    && auth()->id() !== $targetUser->id
+                ) {
+                    abort(403);
                 }
 
                 return $next($request);
-            }),
+            }, only: [
+                'show',
+                'edit',
+                'update'
+            ]),
         ];
     }
 
@@ -44,8 +55,9 @@ class UserController extends Controller implements HasMiddleware
      */
     public function index(Request $request)
     {
-        if (!in_array(Auth::user()->hak_akses, ['superadmin', 'admin'])) {
-            abort(403, 'Anda tidak memiliki akses untuk melihat daftar user.');
+        // Menggunakan hasAnyRole dari Spatie
+        if (!Auth::user()->hasAnyRole(['superadmin', 'admin'])) {
+            abort(403);
         }
 
         $query = User::query();
@@ -58,8 +70,9 @@ class UserController extends Controller implements HasMiddleware
             });
         }
 
+        // Filter role menggunakan relasi Spatie
         if ($request->filled('hak_akses')) {
-            $query->where('hak_akses', $request->hak_akses);
+            $query->role($request->hak_akses);
         }
 
         if ($request->filled('is_active')) {
@@ -85,7 +98,7 @@ class UserController extends Controller implements HasMiddleware
      */
     public function create()
     {
-        if (!in_array(Auth::user()->hak_akses, ['superadmin', 'admin'])) {
+        if (!Auth::user()->hasAnyRole(['superadmin', 'admin'])) {
             abort(403, 'Anda tidak memiliki akses untuk menambah user.');
         }
 
@@ -106,7 +119,7 @@ class UserController extends Controller implements HasMiddleware
      */
     public function store(Request $request)
     {
-        if (!in_array(Auth::user()->hak_akses, ['superadmin', 'admin'])) {
+        if (!Auth::user()->hasAnyRole(['superadmin', 'admin'])) {
             abort(403, 'Anda tidak memiliki akses untuk menambah user.');
         }
 
@@ -121,7 +134,7 @@ class UserController extends Controller implements HasMiddleware
             'is_active' => 'nullable|boolean',
         ]);
 
-        if ($request->hak_akses === 'superadmin' && Auth::user()->hak_akses !== 'superadmin') {
+        if ($request->hak_akses === 'superadmin' && !Auth::user()->hasRole('superadmin')) {
             return back()->withErrors(['hak_akses' => 'Hanya Super Admin yang dapat membuat user Super Admin.'])->withInput();
         }
 
@@ -130,17 +143,19 @@ class UserController extends Controller implements HasMiddleware
             'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'hak_akses' => $request->hak_akses,
             'no_telp' => $request->no_telp,
             'alamat' => $request->alamat,
             'is_active' => $request->boolean('is_active', true),
         ]);
 
+        // Berikan role menggunakan Spatie
+        $user->assignRole($request->hak_akses);
+
         LogAktivitas::create([
             'user_id' => Auth::id(),
             'aktivitas' => 'Menambah user: ' . $user->username,
             'modul' => 'USER_MANAGEMENT',
-            'data' => json_encode($user->toArray()),
+            'data' => json_encode($user->load('roles')->toArray()),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
@@ -162,11 +177,11 @@ class UserController extends Controller implements HasMiddleware
      */
     public function show(User $user)
     {
-        if (!in_array(Auth::user()->hak_akses, ['superadmin', 'admin']) && Auth::id() !== $user->id) {
+        if (!Auth::user()->hasAnyRole(['superadmin', 'admin']) && Auth::id() !== $user->id) {
             abort(403, 'Anda tidak memiliki akses.');
         }
 
-        $user->load(['guru', 'siswa.kelasSiswa.kelas']);
+        $user->load(['guru', 'siswa.kelasSiswa.kelas', 'roles']);
 
         return view('management-access.users.show', compact('user'));
     }
@@ -176,7 +191,7 @@ class UserController extends Controller implements HasMiddleware
      */
     public function edit(User $user)
     {
-        if (!in_array(Auth::user()->hak_akses, ['superadmin', 'admin']) && Auth::id() !== $user->id) {
+        if (!Auth::user()->hasAnyRole(['superadmin', 'admin']) && Auth::id() !== $user->id) {
             abort(403, 'Anda tidak memiliki akses.');
         }
 
@@ -197,7 +212,7 @@ class UserController extends Controller implements HasMiddleware
      */
     public function update(Request $request, User $user)
     {
-        if (!in_array(Auth::user()->hak_akses, ['superadmin', 'admin']) && Auth::id() !== $user->id) {
+        if (!Auth::user()->hasAnyRole(['superadmin', 'admin']) && Auth::id() !== $user->id) {
             abort(403, 'Anda tidak memiliki akses.');
         }
 
@@ -208,7 +223,7 @@ class UserController extends Controller implements HasMiddleware
             'alamat' => 'nullable|string',
         ];
 
-        if (in_array(Auth::user()->hak_akses, ['superadmin', 'admin'])) {
+        if (Auth::user()->hasAnyRole(['superadmin', 'admin'])) {
             $rules['hak_akses'] = 'required|in:superadmin,admin,guru,bk,siswa,ortu';
             $rules['is_active'] = 'nullable|boolean';
         }
@@ -220,22 +235,26 @@ class UserController extends Controller implements HasMiddleware
         $request->validate($rules);
 
         // Security Check: Superadmin
-        if ($request->hak_akses === 'superadmin' && Auth::user()->hak_akses !== 'superadmin') {
+        if ($request->filled('hak_akses') && $request->hak_akses === 'superadmin' && !Auth::user()->hasRole('superadmin')) {
             return back()->withErrors(['hak_akses' => 'Hanya Super Admin yang bisa memberi akses ini.']);
         }
 
         // Hindari penghapusan superadmin terakhir
-        if ($user->hak_akses === 'superadmin' && $request->hak_akses !== 'superadmin') {
-            if (User::where('hak_akses', 'superadmin')->count() <= 1) {
+        if ($user->hasRole('superadmin') && $request->filled('hak_akses') && $request->hak_akses !== 'superadmin') {
+            if (User::role('superadmin')->count() <= 1) {
                 return back()->withErrors(['hak_akses' => 'Tidak dapat mengubah Super Admin terakhir.']);
             }
         }
 
         $data = $request->only(['nama', 'email', 'no_telp', 'alamat']);
 
-        if (in_array(Auth::user()->hak_akses, ['superadmin', 'admin'])) {
-            $data['hak_akses'] = $request->hak_akses;
+        if (Auth::user()->hasAnyRole(['superadmin', 'admin'])) {
             $data['is_active'] = $request->boolean('is_active', $user->is_active);
+            
+            // Sync role baru via Spatie jika ada perubahan
+            if ($request->filled('hak_akses')) {
+                $user->syncRoles([$request->hak_akses]);
+            }
         }
 
         if ($request->filled('password')) {
@@ -253,7 +272,7 @@ class UserController extends Controller implements HasMiddleware
             'user_agent' => $request->userAgent(),
         ]);
 
-        return (Auth::user()->hak_akses == 'superadmin' || Auth::user()->hak_akses == 'admin')
+        return Auth::user()->hasAnyRole(['superadmin', 'admin'])
             ? redirect()->route('management-access.users.index')->with('success', 'User diperbarui.')
             : redirect()->route('management-access.users.show', $user->id)->with('success', 'Profil diperbarui.');
     }
@@ -263,7 +282,7 @@ class UserController extends Controller implements HasMiddleware
      */
     public function destroy(Request $request, User $user)
     {
-        if (!in_array(Auth::user()->hak_akses, ['superadmin', 'admin'])) {
+        if (!Auth::user()->hasAnyRole(['superadmin', 'admin'])) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -271,7 +290,7 @@ class UserController extends Controller implements HasMiddleware
             return back()->with('error', 'Tidak bisa menghapus akun sendiri.');
         }
 
-        if ($user->hak_akses === 'superadmin' && User::where('hak_akses', 'superadmin')->count() <= 1) {
+        if ($user->hasRole('superadmin') && User::role('superadmin')->count() <= 1) {
             return back()->with('error', 'Tidak bisa menghapus Super Admin terakhir.');
         }
 
@@ -294,7 +313,7 @@ class UserController extends Controller implements HasMiddleware
      */
     public function toggleActive(Request $request, User $user)
     {
-        if (!in_array(Auth::user()->hak_akses, ['superadmin', 'admin'])) {
+        if (!Auth::user()->hasAnyRole(['superadmin', 'admin'])) {
             return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
         }
 

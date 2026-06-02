@@ -57,7 +57,7 @@
                         <select name="tahun_ajaran" class="form-select">
                             <option value="">Semua Tahun Ajaran</option>
                             @foreach($tahunAjaranList as $ta)
-                                <option value="{{ $ta->id }}" {{ $tahunAjaranId == $ta->id ? 'selected' : '' }}>
+                                <option value="{{ $ta->id }}" {{ request('tahun_ajaran') == $ta->id ? 'selected' : '' }}>
                                     {{ $ta->nama }} - {{ $ta->semester }}
                                     @if($ta->is_aktif) (Aktif) @endif
                                 </option>
@@ -67,9 +67,9 @@
                     <div class="col-md-3">
                         <select name="kelas" class="form-select">
                             <option value="">Semua Kelas</option>
-                            @foreach($kelasList as $kelas)
-                                <option value="{{ $kelas->id }}" {{ request('kelas') == $kelas->id ? 'selected' : '' }}>
-                                    {{ $kelas->nama_lengkap }}
+                            @foreach($kelasList as $itemKelas)
+                                <option value="{{ $itemKelas->id }}" {{ request('kelas') == $itemKelas->id ? 'selected' : '' }}>
+                                    {{ $itemKelas->nama_lengkap }}
                                 </option>
                             @endforeach
                         </select>
@@ -108,43 +108,29 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($kelasSiswa as $index => $item)
+                            @forelse($kelas as $index => $item)
                             <tr>
-                                <td>{{ $kelasSiswa->firstItem() + $loop->index }}</td>
-                                <td>{{ $item->siswa->nis ?? '-' }}</td>
-                                <td><strong>{{ $item->siswa->nama_lengkap ?? '-' }}</strong></td>
-                                <td>{{ $item->kelas->nama_kelas ?? '-' }}</td>
-                                <td>{{ $item->tahunAjaran->nama ?? '-' }} - {{ $item->tahunAjaran->semester ?? '-' }}</td>
-                                <td>{{ $item->tanggal_masuk ? $item->tanggal_masuk->format('d/m/Y') : '-' }}</td>
-                                <td>{{ $item->tanggal_keluar ? $item->tanggal_keluar->format('d/m/Y') : '-' }}</td>
-                                <td>{!! $item->status_badge !!}</td>
+                                <td>{{ $kelas->firstItem() + $loop->index }}</td>
+                                <td>{{ $item->waliKelas->nip ?? '-' }}</td>
+                                <td><strong>{{ $item->waliKelas->nama ?? '-' }}</strong></td>
+                                <td>{{ $item->nama_lengkap ?? '-' }}</td>
+                                <td>{{ $item->tahunAjaran->nama ?? '-' }}</td>
+                                <td>-</td>
+                                <td>-</td>
                                 <td>
-                                    <a href="{{ route('operasional.kelas-siswa.show', $item->id) }}" 
-                                       class="btn btn-sm btn-info" title="Detail">
+                                    <span class="badge bg-success">Aktif</span>
+                                </td>
+                                <td>
+                                    <a href="{{ route('master-data.kelas.show', $item->id) }}" class="btn btn-sm btn-info" title="Detail">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="{{ route('operasional.kelas-siswa.edit', $item->id) }}" 
-                                       class="btn btn-sm btn-warning" title="Edit">
+                                    <a href="{{ route('master-data.kelas.edit', $item->id) }}" class="btn btn-sm btn-warning" title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    @if(!$item->tanggal_keluar)
-                                    <form action="{{ route('operasional.kelas-siswa.graduate', $item->id) }}" 
-                                          method="POST" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-success" 
-                                                onclick="return confirm('Tandai siswa ini lulus/keluar?')"
-                                                title="Tandai Lulus">
-                                            <i class="bi bi-box-arrow-right"></i>
-                                        </button>
-                                    </form>
-                                    @endif
-                                    <form action="{{ route('operasional.kelas-siswa.destroy', $item->id) }}" 
-                                          method="POST" class="d-inline">
+                                    <form action="{{ route('master-data.kelas.destroy', $item->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger" 
-                                                onclick="return confirm('Yakin ingin menghapus data penempatan ini?')"
-                                                title="Hapus">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus data kelas ini?')" title="Hapus">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -155,10 +141,7 @@
                                 <td colspan="9" class="text-center">
                                     <div class="alert alert-warning mb-0">
                                         <i class="bi bi-exclamation-triangle me-2"></i>
-                                        Tidak ada data penempatan siswa.
-                                        <a href="{{ route('operasional.kelas-siswa.create') }}" class="alert-link">
-                                            Tambah penempatan baru
-                                        </a>
+                                        Tidak ada data kelas tersedia.
                                     </div>
                                 </td>
                             </tr>
@@ -168,18 +151,17 @@
                 </div>
                 
                 <div class="d-flex justify-content-end mt-3">
-                    {{ $kelasSiswa->appends(request()->query())->links() }}
+                    {{ $kelas->appends(request()->query())->links() }}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Bulk Assign -->
 <div class="modal fade" id="bulkAssignModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form method="POST" action="{{ route('operasional.kelas-siswa.bulk-assign') }}">
+            <form method="POST" action="#">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Bulk Assign Siswa ke Kelas</h5>
@@ -190,43 +172,16 @@
                         <label class="form-label">Pilih Kelas Tujuan</label>
                         <select name="kelas_id" class="form-select" required>
                             <option value="">Pilih Kelas</option>
-                            @foreach($kelasList as $kelas)
-                                <option value="{{ $kelas->id }}">
-                                    {{ $kelas->nama_lengkap }}
+                            @foreach($kelasList as $itemKelas)
+                                <option value="{{ $itemKelas->id }}">
+                                    {{ $itemKelas->nama_lengkap }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Tanggal Masuk</label>
-                        <input type="date" name="tanggal_masuk" class="form-control" 
-                               value="{{ date('Y-m-d') }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Pilih Siswa (tanpa kelas aktif)</label>
-                        <div class="row" style="max-height: 300px; overflow-y: auto;">
-                            @php
-                                $siswaTanpaKelas = \App\Models\MasterData\Siswa::whereDoesntHave('kelasSiswa', function($q) {
-                                    $q->whereNull('tanggal_keluar');
-                                })->orderBy('nama_lengkap')->get();
-                            @endphp
-                            @forelse($siswaTanpaKelas as $siswa)
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" 
-                                           name="siswa_ids[]" value="{{ $siswa->id }}" 
-                                           id="siswa_{{ $siswa->id }}">
-                                    <label class="form-check-label" for="siswa_{{ $siswa->id }}">
-                                        {{ $siswa->nis }} - {{ $siswa->nama_lengkap }}
-                                    </label>
-                                </div>
-                            </div>
-                            @empty
-                            <div class="col-12">
-                                <p class="text-muted">Tidak ada siswa yang tersedia (semua sudah memiliki kelas aktif)</p>
-                            </div>
-                            @endforelse
-                        </div>
+                        <input type="date" name="tanggal_masuk" class="form-control" value="{{ date('Y-m-d') }}" required>
                     </div>
                 </div>
                 <div class="modal-footer">

@@ -8,11 +8,11 @@
                 <div class="card-body box-profile">
                     <div class="text-center">
                         <img class="profile-user-img img-fluid img-circle"
-                             src="{{ asset('storage/avatars/' . ($user->foto ?? 'default.jpg')) }}"
+                             src="{{ $user->foto_url }}"
                              alt="User profile picture">
                     </div>
                     <h3 class="profile-username text-center">{{ $user->nama }}</h3>
-                    <p class="text-muted text-center">{{ strtoupper($user->hak_akses) }}</p>
+                    <p class="text-muted text-center">{{ strtoupper($user->roles->first()?->name ?? '-') }}</p>
 
                     <ul class="list-group list-group-unbordered mb-3">
                         <li class="list-group-item">
@@ -37,7 +37,7 @@
                 <div class="card-header p-2">
                     <ul class="nav nav-pills">
                         <li class="nav-item"><a class="nav-link active" href="#kontak" data-toggle="tab">Informasi Kontak</a></li>
-                        @if($user->hak_akses == 'siswa' || $user->hak_akses == 'guru')
+                        @if($user->hasAnyRole(['siswa', 'guru', 'bk']))
                         <li class="nav-item"><a class="nav-link" href="#akademik" data-toggle="tab">Data Akademik</a></li>
                         @endif
                     </ul>
@@ -55,22 +55,24 @@
                             <p class="text-muted">{{ $user->alamat ?? '-' }}</p>
                         </div>
 
+                        @if($user->hasAnyRole(['siswa', 'guru', 'bk']))
                         <div class="tab-pane" id="akademik">
-                            @if($user->hak_akses == 'siswa' && $user->siswa)
+                            @if($user->isSiswa() && $user->siswa)
                                 <table class="table table-sm">
-                                    <tr><th>NISN</th><td>: {{ $user->siswa->nisn }}</td></tr>
+                                    <tr><th style="width: 30%">NISN</th><td>: {{ $user->siswa->nisn }}</td></tr>
                                     <tr><th>Kelas Saat Ini</th><td>: {{ $user->siswa->kelasSiswa->first()->kelas->nama_kelas ?? 'Belum ada kelas' }}</td></tr>
                                     <tr><th>Total Poin</th><td>: <span class="badge badge-info">{{ $user->siswa->total_poin ?? 0 }}</span></td></tr>
                                 </table>
-                            @elseif(($user->hak_akses == 'guru' || $user->hak_akses == 'bk') && $user->guru)
+                            @elseif(($user->isGuru() || $user->isBK()) && $user->guru)
                                 <table class="table table-sm">
-                                    <tr><th>NIP</th><td>: {{ $user->guru->nip }}</td></tr>
+                                    <tr><th style="width: 30%">NIP</th><td>: {{ $user->guru->nip }}</td></tr>
                                     <tr><th>Jabatan</th><td>: {{ $user->guru->jabatan }}</td></tr>
                                 </table>
                             @else
                                 <p class="text-center text-muted">Data detail belum dilengkapi.</p>
                             @endif
                         </div>
+                        @endif
                     </div>
                 </div>
             </div>

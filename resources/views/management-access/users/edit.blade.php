@@ -23,14 +23,17 @@
                             <small class="text-muted">Username tidak dapat diubah untuk menjaga integritas log.</small>
                         </div>
                         <div class="form-group">
-                            <label>Hak Akses</label>
-                            <select name="hak_akses" class="form-control" {{ !in_array(Auth::user()->hak_akses, ['superadmin', 'admin']) ? 'disabled' : '' }}>
+                            <label>Role / Hak Akses</label>
+                            <select name="role" class="form-control @error('role') is-invalid @enderror" {{ !Auth::user()->canManageUsers() ? 'disabled' : '' }} required>
+                                <option value="">-- Pilih Role --</option>
                                 @foreach($hakAksesList as $key => $label)
-                                    <option value="{{ $key }}" {{ $user->hak_akses == $key ? 'selected' : '' }}>{{ $label }}</option>
+                                    <option value="{{ $key }}" {{ old('role', $user->roles->first()?->name) == $key ? 'selected' : '' }}>{{ $label }}</option>
                                 @endforeach
                             </select>
-                            @if(!in_array(Auth::user()->hak_akses, ['superadmin', 'admin']))
-                                <input type="hidden" name="hak_akses" value="{{ $user->hak_akses }}">
+                            @error('role') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                            
+                            @if(!Auth::user()->canManageUsers())
+                                <input type="hidden" name="role" value="{{ $user->roles->first()?->name }}">
                             @endif
                         </div>
                     </div>

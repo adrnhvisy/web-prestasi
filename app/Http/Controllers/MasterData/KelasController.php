@@ -7,13 +7,13 @@ use App\Models\MasterData\Kelas;
 use App\Models\MasterData\Jurusan;
 use App\Models\MasterData\Guru;
 use App\Models\MasterData\TahunAjaran;
-use App\Traits\Loggable; // 1. Import Trait
+use App\Traits\Loggable; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class KelasController extends Controller
 {
-    use Loggable; // 2. Gunakan Trait
+    use Loggable; 
 
     /**
      * Tampilkan daftar kelas
@@ -24,17 +24,29 @@ class KelasController extends Controller
         $jurusanList = Jurusan::all();
         $tingkatList = ['X', 'XI', 'XII'];
 
+        // Ambil data untuk dropdown filter di view
+        $kelasList = Kelas::orderBy('tingkat')->orderBy('rombel')->get();
+
         $query = Kelas::with(['jurusan', 'tahunAjaran', 'waliKelas']);
 
+        // --- Fitur Filter Ditambahkan Di Sini ---
         $query->when($request->tahun_ajaran, function ($q, $taId) {
             return $q->where('tahun_ajaran_id', $taId);
         })
-            ->when($request->jurusan, function ($q, $jurusanId) {
-                return $q->where('jurusan_id', $jurusanId);
-            })
-            ->when($request->tingkat, function ($q, $tingkat) {
-                return $q->where('tingkat', $tingkat);
+        ->when($request->kelas, function ($q, $kelasId) {
+            return $q->where('id', $kelasId);
+        })
+        ->when($request->tingkat, function ($q, $tingkat) {
+            return $q->where('tingkat', $tingkat);
+        })
+        ->when($request->search, function ($q, $search) {
+            return $q->where(function($subId) use ($search) {
+                $subId->where('rombel', 'like', "%{$search}%")
+                      ->orWhereHas('waliKelas', function($g) use ($search) {
+                          $g->where('nama', 'like', "%{$search}%");
+                      });
             });
+        });
 
         $kelas = $query->orderBy('tingkat')
             ->orderBy('jurusan_id')
@@ -46,7 +58,8 @@ class KelasController extends Controller
             'kelas',
             'tahunAjaranList',
             'jurusanList',
-            'tingkatList'
+            'tingkatList',
+            'kelasList' // Ditambahkan agar tidak undefined di view
         ));
     }
 
@@ -100,7 +113,6 @@ class KelasController extends Controller
                 'wali_kelas_id' => $request->wali_kelas_id,
             ]);
 
-            // CATAT LOG: Tambah Kelas
             $this->logActivity(
                 "Menambahkan Kelas baru: {$kelas->nama_lengkap}",
                 "kelas",
@@ -169,7 +181,6 @@ class KelasController extends Controller
         try {
             DB::beginTransaction();
 
-            // Simpan data lama sebelum update
             $oldData = $kelas->load(['jurusan', 'tahunAjaran'])->toArray();
 
             $kelas->update([
@@ -180,7 +191,6 @@ class KelasController extends Controller
                 'wali_kelas_id' => $request->wali_kelas_id,
             ]);
 
-            // CATAT LOG: Update Kelas
             $this->logActivity(
                 "Memperbarui data Kelas: {$kelas->nama_lengkap}",
                 "kelas",
@@ -214,7 +224,6 @@ class KelasController extends Controller
 
             $kelas->delete();
 
-            // CATAT LOG: Hapus Kelas
             $this->logActivity(
                 "Menghapus Kelas: {$namaKelas}",
                 "kelas",

@@ -1,4 +1,4 @@
-{{-- 
+
 @extends('layouts.app')
 
 @section('title', 'Data Prestasi Siswa')
@@ -120,10 +120,10 @@
 </div>
 </div>
 </div>
-@endsection  --}}
+@endsection  
 
 
-@extends('layouts.app')
+{{-- @extends('layouts.app')
 
 @section('title', 'Input Prestasi')
 
@@ -282,4 +282,4 @@
         </div>
     </div>
 </div>
-@endsection
+@endsection --}}

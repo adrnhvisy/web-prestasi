@@ -39,7 +39,7 @@
             <div class="card-header">
                 <h3 class="card-title">Form Edit Guru</h3>
                 <div class="card-tools">
-                    <a href="#" class="btn btn-secondary btn-sm">
+                    <a href="{{ route('master-data.guru.index') }}" class="btn btn-secondary btn-sm">
                         <i class="bi bi-arrow-left"></i> Kembali
                     </a>
                 </div>

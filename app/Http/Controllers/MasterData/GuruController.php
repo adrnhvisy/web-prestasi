@@ -195,9 +195,9 @@ class GuruController extends Controller
         $query = Guru::with('user');
 
         if ($request->has('search') && !empty($request->search)) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('nama_lengkap', 'like', '%' . $request->search . '%')
-                  ->orWhere('nip', 'like', '%' . $request->search . '%');
+                    ->orWhere('nip', 'like', '%' . $request->search . '%');
             });
         }
 
@@ -241,9 +241,11 @@ class GuruController extends Controller
             'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make('guru123'),
-                        'hak_akses' => 'guru',
             'is_active' => true,
         ]);
+
+        // 2. Berikan role 'guru' menggunakan Spatie Role method
+        $user->assignRole('guru');
 
         // Buat data guru
         $guru = Guru::create([
